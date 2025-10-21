@@ -17,6 +17,17 @@ interface VolatilityChartProps {
   ticker: string;
 }
 
+interface ChartDataPoint {
+  date: string;
+  close: number;
+  daily_return: number;
+  volume: number;
+  volume_ratio_20d: number;
+  volatility_5d: number;
+  is_smart_anomaly: number;
+  isAnomaly: boolean;
+}
+
 // Simple date formatter for YYYY-MM-DD dates
 const formatDate = (dateStr: string): string => {
   if (!dateStr) return 'Invalid Date';
@@ -31,23 +42,31 @@ const formatDate = (dateStr: string): string => {
 };
 
 export default function VolatilityChart({ data, ticker }: VolatilityChartProps) {
-  const chartData = data.map(item => ({
+  const chartData: ChartDataPoint[] = data.map(item => ({
     ...item,
     isAnomaly: item.is_smart_anomaly === 1
   }));
 
-  const formatTooltipValue = (value: any) => {
+  // Fixed tooltip formatter - Recharts passes number values
+  const formatTooltipValue = (value: number): [string, string] => {
     if (value === null || value === undefined) return ['N/A', 'Volatility'];
     
-    const numValue = typeof value === 'number' ? value : parseFloat(value);
-    if (isNaN(numValue)) return [value, 'Volatility'];
-    
-    return [`${numValue.toFixed(2)}%`, 'Volatility'];
+    return [`${value.toFixed(2)}%`, 'Volatility'];
   };
 
-  const formatYAxis = (value: any) => {
-    const numValue = typeof value === 'number' ? value : parseFloat(value);
-    return isNaN(numValue) ? '0%' : `${numValue.toFixed(1)}%`;
+  const formatYAxis = (value: number): string => {
+    return isNaN(value) ? '0%' : `${value.toFixed(1)}%`;
+  };
+
+  const formatTooltipLabel = (label: string | number): string => {
+    try {
+      const dateStr = String(label);
+      const [year, month, day] = dateStr.split('-').map(Number);
+      const date = new Date(year, month - 1, day);
+      return date.toLocaleDateString();
+    } catch {
+      return String(label);
+    }
   };
 
   return (
@@ -70,15 +89,7 @@ export default function VolatilityChart({ data, ticker }: VolatilityChartProps) 
             />
             <Tooltip 
               formatter={formatTooltipValue}
-              labelFormatter={(label) => {
-                try {
-                  const [year, month, day] = label.split('-').map(Number);
-                  const date = new Date(year, month - 1, day);
-                  return date.toLocaleDateString();
-                } catch {
-                  return label;
-                }
-              }}
+              labelFormatter={formatTooltipLabel}
             />
             <Area 
               type="monotone" 

@@ -19,9 +19,14 @@ interface AnomalySummaryProps {
 
 export default function AnomalySummary({ data, ticker }: AnomalySummaryProps) {
   const anomalies = data.filter(d => d.is_smart_anomaly === 1);
-  const avgVolatility = data.reduce((sum, d) => sum + d.volatility_5d, 0) / data.length;
-  const maxReturn = Math.max(...data.map(d => Math.abs(d.daily_return)));
+  const avgVolatility = data.length > 0 
+    ? data.reduce((sum, d) => sum + d.volatility_5d, 0) / data.length 
+    : 0;
+  const maxReturn = data.length > 0 
+    ? Math.max(...data.map(d => Math.abs(d.daily_return))) 
+    : 0;
   const highVolumeAnomalies = anomalies.filter(a => a.volume_ratio_20d > 2).length;
+  const anomalyRate = data.length > 0 ? (anomalies.length / data.length) * 100 : 0;
 
   return (
     <div className="bg-white rounded-xl p-6 shadow-lg border border-orange-100">
@@ -66,7 +71,7 @@ export default function AnomalySummary({ data, ticker }: AnomalySummaryProps) {
           </div>
           <div className="flex justify-between">
             <span>Anomaly rate:</span>
-            <span className="font-medium">{((anomalies.length / data.length) * 100).toFixed(1)}%</span>
+            <span className="font-medium">{anomalyRate.toFixed(1)}%</span>
           </div>
         </div>
       </div>

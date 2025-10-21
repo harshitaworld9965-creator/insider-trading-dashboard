@@ -17,6 +17,17 @@ interface PriceChartProps {
   ticker: string;
 }
 
+interface ChartDataPoint {
+  date: string;
+  close: number;
+  daily_return: number;
+  volume: number;
+  volume_ratio_20d: number;
+  volatility_5d: number;
+  is_smart_anomaly: number;
+  anomaly: number | null;
+}
+
 // Simple date formatter for YYYY-MM-DD dates
 const formatDate = (dateStr: string): string => {
   if (!dateStr) return 'Invalid Date';
@@ -35,23 +46,31 @@ const formatDate = (dateStr: string): string => {
 };
 
 export default function PriceChart({ data, ticker }: PriceChartProps) {
-  // Prepare data - keep dates as strings since they're already in YYYY-MM-DD format
-  const chartData = data.map(item => ({
+  // Prepare data with proper typing
+  const chartData: ChartDataPoint[] = data.map(item => ({
     ...item,
-    // Keep original date string for data key
     anomaly: item.is_smart_anomaly === 1 ? item.close : null
   }));
 
-  const formatTooltipValue = (value: any, name: string) => {
+  // Fixed tooltip formatter that matches Recharts' expected signature
+  const formatTooltipValue = (value: number, name: string): [string, string] => {
     if (value === null || value === undefined) return ['N/A', name];
     
-    const numValue = typeof value === 'number' ? value : parseFloat(value);
-    if (isNaN(numValue)) return [value, name];
-    
     if (name === 'close' || name === 'Price') {
-      return [`$${numValue.toFixed(2)}`, 'Price'];
+      return [`$${value.toFixed(2)}`, 'Price'];
     }
-    return [numValue.toFixed(2), name];
+    return [value.toFixed(2), name];
+  };
+
+  const formatTooltipLabel = (label: string | number): string => {
+    try {
+      const dateStr = String(label);
+      const [year, month, day] = dateStr.split('-').map(Number);
+      const date = new Date(year, month - 1, day);
+      return date.toLocaleDateString();
+    } catch {
+      return String(label);
+    }
   };
 
   return (
@@ -70,20 +89,11 @@ export default function PriceChart({ data, ticker }: PriceChartProps) {
             />
             <YAxis 
               tick={{ fontSize: 12 }}
-              tickFormatter={(value) => `$${value}`}
+              tickFormatter={(value: number) => `$${value}`}
             />
             <Tooltip 
               formatter={formatTooltipValue}
-              labelFormatter={(label) => {
-                try {
-                  // Label is the YYYY-MM-DD date string
-                  const [year, month, day] = label.split('-').map(Number);
-                  const date = new Date(year, month - 1, day);
-                  return date.toLocaleDateString();
-                } catch {
-                  return label;
-                }
-              }}
+              labelFormatter={formatTooltipLabel}
             />
             <Legend />
             <Line 

@@ -13,23 +13,45 @@ export interface StockData {
   anomaly_score?: number;
 }
 
+export interface StockSummary {
+  ticker: string;
+  totalDays: number;
+  anomalyCount: number;
+  avgVolatility: number;
+  maxReturn: number;
+  recentAnomalies: StockData[];
+}
+
+interface CSVRecord {
+  [key: string]: string | number;
+  Date?: string;
+  Price?: string;
+  Close: number;
+  Daily_Return: number;
+  Volume: number;
+  Volume_Ratio_20d: number;
+  Volatility_5d: number;
+  Is_Smart_Anomaly: number;
+  Anomaly_Score?: number;
+}
+
 // Path to your processed data
 const DATA_PATH = path.join(process.cwd(), '..', 'data', 'processed', 'smart');
 
 // Simple CSV parser
-function parseCSV(csvText: string): any[] {
+function parseCSV(csvText: string): CSVRecord[] {
   const lines = csvText.split('\n').filter(line => line.trim());
   if (lines.length === 0) return [];
   
   const headers = lines[0].split(',').map(h => h.trim());
-  const result = [];
+  const result: CSVRecord[] = [];
   
   for (let i = 1; i < lines.length; i++) {
     const values = lines[i].split(',').map(v => v.trim());
-    const row: any = {};
+    const row: CSVRecord = {} as CSVRecord;
     
     headers.forEach((header, index) => {
-      let value: any = values[index] || '';
+      let value: string | number = values[index] || '';
       
       // The first column is actually the Date, but labeled as "Price"
       if (index === 0 && header === 'Price') {
@@ -37,7 +59,7 @@ function parseCSV(csvText: string): any[] {
         row['Date'] = value;
       }
       // Convert numeric fields (skip the date column)
-      else if (value !== '') {
+      else if (value !== '' && header !== 'Date') {
         const numValue = parseFloat(value);
         value = isNaN(numValue) ? value : numValue;
         row[header] = value;
@@ -72,8 +94,8 @@ export async function getStockData(ticker: string): Promise<StockData[]> {
     
     const records = parseCSV(fileContent);
 
-    return records.map((record: any) => ({
-      date: record.Date || record.Price, // Use Date if available, fallback to Price
+    return records.map((record: CSVRecord) => ({
+      date: record.Date || record.Price || '', // Use Date if available, fallback to Price
       close: record.Close,
       daily_return: record.Daily_Return,
       volume: record.Volume,
@@ -88,16 +110,22 @@ export async function getStockData(ticker: string): Promise<StockData[]> {
   }
 }
 
-export async function getStockSummary(ticker: string) {
+export async function getStockSummary(ticker: string): Promise<StockSummary> {
   const data = await getStockData(ticker);
   const anomalies = data.filter(d => d.is_smart_anomaly === 1);
+  const avgVolatility = data.length > 0 
+    ? data.reduce((sum, d) => sum + d.volatility_5d, 0) / data.length 
+    : 0;
+  const maxReturn = data.length > 0 
+    ? Math.max(...data.map(d => Math.abs(d.daily_return))) 
+    : 0;
   
   return {
     ticker,
     totalDays: data.length,
     anomalyCount: anomalies.length,
-    avgVolatility: data.reduce((sum, d) => sum + d.volatility_5d, 0) / data.length,
-    maxReturn: Math.max(...data.map(d => Math.abs(d.daily_return))),
+    avgVolatility,
+    maxReturn,
     recentAnomalies: anomalies.slice(-5)
   };
 }
