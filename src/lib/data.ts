@@ -1,6 +1,3 @@
-import fs from 'fs';
-import path from 'path';
-
 // Types for our data
 export interface StockData {
   date: string;
@@ -35,66 +32,33 @@ interface CSVRecord {
   Anomaly_Score?: number;
 }
 
-// Path to your processed data
-const DATA_PATH = path.join(process.cwd(), '..', 'data', 'processed', 'smart');
-
-// Simple CSV parser
-function parseCSV(csvText: string): CSVRecord[] {
-  const lines = csvText.split('\n').filter(line => line.trim());
-  if (lines.length === 0) return [];
-  
-  const headers = lines[0].split(',').map(h => h.trim());
-  const result: CSVRecord[] = [];
-  
-  for (let i = 1; i < lines.length; i++) {
-    const values = lines[i].split(',').map(v => v.trim());
-    const row: CSVRecord = {} as CSVRecord;
-    
-    headers.forEach((header, index) => {
-      let value: string | number = values[index] || '';
-      
-      // The first column is actually the Date, but labeled as "Price"
-      if (index === 0 && header === 'Price') {
-        // This is actually the date column
-        row['Date'] = value;
-      }
-      // Convert numeric fields (skip the date column)
-      else if (value !== '' && header !== 'Date') {
-        const numValue = parseFloat(value);
-        value = isNaN(numValue) ? value : numValue;
-        row[header] = value;
-      } else {
-        row[header] = value;
-      }
-    });
-    
-    result.push(row);
-  }
-  
-  return result;
-}
-
 export async function getAvailableStocks(): Promise<string[]> {
   try {
-    const files = fs.readdirSync(DATA_PATH);
-    return files
-      .filter(file => file.endsWith('_smart_anomalies.csv'))
-      .map(file => file.replace('_smart_anomalies.csv', ''))
-      .sort();
+    // In production, we'll use the pre-built JSON files
+    // For now, return the tickers that we know have JSON files
+    const defaultStocks = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'JPM', 'JNJ', 'WMT'];
+    
+    // In a real scenario, you might want to fetch available stocks from an API
+    // or maintain a list of available tickers
+    return defaultStocks;
   } catch (error) {
-    console.error('Error reading data directory:', error);
+    console.error('Error getting available stocks:', error);
     return ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'JPM', 'JNJ', 'WMT'];
   }
 }
 
 export async function getStockData(ticker: string): Promise<StockData[]> {
   try {
-    const filePath = path.join(DATA_PATH, `${ticker}_smart_anomalies.csv`);
-    const fileContent = fs.readFileSync(filePath, 'utf-8');
+    // Fetch from JSON file in public folder
+    const response = await fetch(`/data/${ticker}.json`);
     
-    const records = parseCSV(fileContent);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch data for ${ticker}`);
+    }
+    
+    const records: CSVRecord[] = await response.json();
 
-    return records.map((record: CSVRecord) => ({
+    return records.map((record) => ({
       date: record.Date || record.Price || '', // Use Date if available, fallback to Price
       close: record.Close,
       daily_return: record.Daily_Return,
