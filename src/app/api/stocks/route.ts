@@ -9,7 +9,7 @@ export async function GET() {
     );
     
     return NextResponse.json({ stocks: summaries });
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json(
       { error: 'Failed to fetch stocks' },
       { status: 500 }

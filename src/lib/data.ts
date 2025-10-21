@@ -38,12 +38,28 @@ export async function getStockData(ticker: string): Promise<StockData[]> {
     console.log(`Received ${records.length} records for ${ticker}`);
 
     // Transform the data - handle different possible field names
-    const transformedData = records.map((record: any) => {
-      // Find the date field - it could be 'Date', 'Price', or the first field
-      let dateValue = record.Date || record.Price;
-      if (!dateValue && record[Object.keys(record)[0]]) {
-        dateValue = record[Object.keys(record)[0]];
-      }
+    interface JSONRecord {
+  Date?: string;
+  Price?: string;
+  Close?: number;
+  close?: number;
+  Daily_Return?: number;
+  daily_return?: number;
+  Volume?: number;
+  volume?: number;
+  Volume_Ratio_20d?: number;
+  volume_ratio_20d?: number;
+  Volatility_5d?: number;
+  volatility_5d?: number;
+  Is_Smart_Anomaly?: number;
+  is_smart_anomaly?: number;
+  Anomaly_Score?: number;
+  anomaly_score?: number;
+  [key: string]: string | number | undefined;
+}
+
+const transformedData = records.map((record: JSONRecord) => {
+
 
       return {
         date: dateValue || 'Unknown Date',
@@ -68,7 +84,7 @@ export async function getStockData(ticker: string): Promise<StockData[]> {
 }
 
 // Fallback mock data
-function getMockData(ticker: string): StockData[] {
+function getMockData(_ticker: string): StockData[] {
   return [
     {
       date: "2024-01-01",

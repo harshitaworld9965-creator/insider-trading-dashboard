@@ -10,7 +10,7 @@ export async function GET(
     const data = await getStockData(ticker);
     
     return NextResponse.json({ ticker, data });
-  } catch (error) {
+  } catch (_error) {
     const { ticker } = await params;  // ← Also add 'await' in catch block
     return NextResponse.json(
       { error: `Failed to fetch data for ${ticker}` },
