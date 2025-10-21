@@ -19,26 +19,7 @@ export interface StockSummary {
   recentAnomalies: StockData[];
 }
 
-export async function getAvailableStocks(): Promise<string[]> {
-  return ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'JPM', 'JNJ', 'WMT'];
-}
-
-export async function getStockData(ticker: string): Promise<StockData[]> {
-  try {
-    console.log(`Fetching data for ${ticker}...`);
-    
-    // Fetch from JSON file in public folder
-    const response = await fetch(`/data/${ticker}.json`);
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const records = await response.json();
-    console.log(`Received ${records.length} records for ${ticker}`);
-
-    // Transform the data - handle different possible field names
-    interface JSONRecord {
+interface JSONRecord {
   Date?: string;
   Price?: string;
   Close?: number;
@@ -58,11 +39,33 @@ export async function getStockData(ticker: string): Promise<StockData[]> {
   [key: string]: string | number | undefined;
 }
 
-const transformedData = records.map((record: JSONRecord) => {
+export async function getAvailableStocks(): Promise<string[]> {
+  return ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'JPM', 'JNJ', 'WMT'];
+}
 
+export async function getStockData(ticker: string): Promise<StockData[]> {
+  try {
+    console.log(`Fetching data for ${ticker}...`);
+    
+    // Fetch from JSON file in public folder
+    const response = await fetch(`/data/${ticker}.json`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const records: JSONRecord[] = await response.json();
+    console.log(`Received ${records.length} records for ${ticker}`);
+
+    // Transform the data - handle different possible field names
+    const transformedData = records.map((record: JSONRecord) => {
+      // Find the date field - it could be 'Date', 'Price', or the first field
+      const dateValue = record.Date || record.Price;
+      const firstKey = Object.keys(record)[0];
+      const finalDateValue = dateValue || (record[firstKey] as string) || 'Unknown Date';
 
       return {
-        date: dateValue || 'Unknown Date',
+        date: finalDateValue,
         close: record.Close || record.close || 0,
         daily_return: record.Daily_Return || record.daily_return || 0,
         volume: record.Volume || record.volume || 0,
@@ -79,12 +82,12 @@ const transformedData = records.map((record: JSONRecord) => {
   } catch (error) {
     console.error(`Error reading data for ${ticker}:`, error);
     // Return mock data as fallback
-    return getMockData(ticker);
+    return getMockData();
   }
 }
 
 // Fallback mock data
-function getMockData(_ticker: string): StockData[] {
+function getMockData(): StockData[] {
   return [
     {
       date: "2024-01-01",
