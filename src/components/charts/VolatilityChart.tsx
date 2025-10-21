@@ -49,10 +49,10 @@ export default function VolatilityChart({ data, ticker }: VolatilityChartProps) 
 
   // Fixed tooltip formatter - Recharts passes number values
   const formatTooltipValue = (value: number): [string, string] => {
-    if (value === null || value === undefined) return ['N/A', 'Volatility'];
-    
-    return [`${value.toFixed(2)}%`, 'Volatility'];
-  };
+  if (typeof value !== 'number' || isNaN(value)) return ['N/A', 'Volatility'];
+  
+  return [`${value.toFixed(2)}%`, 'Volatility'];
+};
 
   const formatYAxis = (value: number): string => {
     return isNaN(value) ? '0%' : `${value.toFixed(1)}%`;

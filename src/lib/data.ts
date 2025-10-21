@@ -59,22 +59,22 @@ export async function getStockData(ticker: string): Promise<StockData[]> {
 
     // Transform the data - handle different possible field names
     const transformedData = records.map((record: JSONRecord) => {
-      // Find the date field - it could be 'Date', 'Price', or the first field
-      const dateValue = record.Date || record.Price;
-      const firstKey = Object.keys(record)[0];
-      const finalDateValue = dateValue || (record[firstKey] as string) || 'Unknown Date';
+  const dateValue = record.Date || record.Price;
+  const firstKey = Object.keys(record)[0];
+  const finalDateValue = dateValue || (record[firstKey] as string) || 'Unknown Date';
 
-      return {
-        date: finalDateValue,
-        close: record.Close || record.close || 0,
-        daily_return: record.Daily_Return || record.daily_return || 0,
-        volume: record.Volume || record.volume || 0,
-        volume_ratio_20d: record.Volume_Ratio_20d || record.volume_ratio_20d || 0,
-        volatility_5d: record.Volatility_5d || record.volatility_5d || 0,
-        is_smart_anomaly: record.Is_Smart_Anomaly || record.is_smart_anomaly || 0,
-        anomaly_score: record.Anomaly_Score || record.anomaly_score
-      };
-    });
+  return {
+    date: finalDateValue,
+    close: Number(record.Close || record.close || 0),
+    daily_return: Number(record.Daily_Return || record.daily_return || 0),
+    volume: Number(record.Volume || record.volume || 0),
+    volume_ratio_20d: Number(record.Volume_Ratio_20d || record.volume_ratio_20d || 0),
+    volatility_5d: Number(record.Volatility_5d || record.volatility_5d || 0),
+    is_smart_anomaly: Number(record.Is_Smart_Anomaly || record.is_smart_anomaly || 0),
+    anomaly_score: record.Anomaly_Score || record.anomaly_score ? Number(record.Anomaly_Score || record.anomaly_score) : undefined
+  };
+});
+
 
     console.log(`Transformed ${transformedData.length} records for ${ticker}`);
     return transformedData;

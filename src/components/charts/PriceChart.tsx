@@ -54,13 +54,13 @@ export default function PriceChart({ data, ticker }: PriceChartProps) {
 
   // Fixed tooltip formatter that matches Recharts' expected signature
   const formatTooltipValue = (value: number, name: string): [string, string] => {
-    if (value === null || value === undefined) return ['N/A', name];
-    
-    if (name === 'close' || name === 'Price') {
-      return [`$${value.toFixed(2)}`, 'Price'];
-    }
-    return [value.toFixed(2), name];
-  };
+  if (typeof value !== 'number' || isNaN(value)) return ['N/A', name];
+  
+  if (name === 'close' || name === 'Price') {
+    return [`$${value.toFixed(2)}`, 'Price'];
+  }
+  return [value.toFixed(2), name];
+};
 
   const formatTooltipLabel = (label: string | number): string => {
     try {
