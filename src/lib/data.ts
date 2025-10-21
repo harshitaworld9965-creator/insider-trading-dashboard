@@ -23,7 +23,7 @@ export interface StockSummary {
 }
 
 interface CSVRecord {
-  [key: string]: string | number;
+  [key: string]: string | number | undefined;
   Date?: string;
   Price?: string;
   Close: number;

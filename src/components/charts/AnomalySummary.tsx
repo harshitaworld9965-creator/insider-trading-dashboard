@@ -31,8 +31,8 @@ export default function AnomalySummary({ data, ticker }: AnomalySummaryProps) {
   return (
     <div className="bg-white rounded-xl p-6 shadow-lg border border-orange-100">
       <h2 className="text-xl font-semibold text-gray-800 mb-4">
-        Anomaly Summary
-      </h2>
+  {ticker} Anomaly Summary
+</h2>
       <div className="space-y-4">
         <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
           <div className="flex items-center">
